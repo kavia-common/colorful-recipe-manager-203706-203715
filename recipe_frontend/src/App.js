@@ -1,13 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
+import { getApiBaseUrl } from './apiConfig';
 
 const DEFAULT_COLORS = ['#3b82f6', '#06b6d4', '#a855f7', '#f59e0b', '#ef4444', '#10b981'];
-
-/** Build backend base URL from env, falling back to localhost dev default. */
-function getApiBaseUrl() {
-  // CRA exposes env vars prefixed with REACT_APP_*
-  return (process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001').replace(/\/$/, '');
-}
 
 /** Parse textarea lines into a list, dropping empty lines. */
 function linesToList(text) {
