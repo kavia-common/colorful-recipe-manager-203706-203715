@@ -4,6 +4,8 @@ import { getApiBaseUrl } from './apiConfig';
 
 const DEFAULT_COLORS = ['#3b82f6', '#06b6d4', '#a855f7', '#f59e0b', '#ef4444', '#10b981'];
 
+const THEME_STORAGE_KEY = 'crm.theme';
+
 /** Parse textarea lines into a list, dropping empty lines. */
 function linesToList(text) {
   return text
@@ -22,6 +24,23 @@ function isValidHexColor(value) {
   return /^#([A-Fa-f0-9]{6})$/.test(value);
 }
 
+/** Resolve initial theme, preferring persisted choice and falling back to OS preference. */
+function getInitialTheme() {
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === 'light' || stored === 'dark') return stored;
+  } catch (e) {
+    // Ignore localStorage read errors (e.g., disabled storage).
+  }
+
+  const prefersDark =
+    typeof window !== 'undefined' &&
+    window.matchMedia &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  return prefersDark ? 'dark' : 'light';
+}
+
 // PUBLIC_INTERFACE
 function App() {
   const API_BASE = useMemo(() => getApiBaseUrl(), []);
@@ -36,12 +55,24 @@ function App() {
   const [mode, setMode] = useState('create'); // create | edit
   const [editingId, setEditingId] = useState(null);
 
+  const [theme, setTheme] = useState(getInitialTheme);
+
   // Form state (kept simple)
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [ingredientsText, setIngredientsText] = useState('');
   const [stepsText, setStepsText] = useState('');
   const [color, setColor] = useState(DEFAULT_COLORS[0]);
+
+  useEffect(() => {
+    // Theme is applied via CSS variables; we set it on :root for easy styling.
+    document.documentElement.dataset.theme = theme;
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (e) {
+      // Ignore localStorage write errors.
+    }
+  }, [theme]);
 
   async function apiFetch(path, options = {}) {
     const res = await fetch(`${API_BASE}${path}`, {
@@ -168,6 +199,10 @@ function App() {
     }
   }
 
+  function toggleTheme() {
+    setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  }
+
   const recipeCountLabel = `${recipes.length} recipe${recipes.length === 1 ? '' : 's'}`;
 
   return (
@@ -182,6 +217,16 @@ function App() {
           </div>
 
           <div className="headerActions">
+            <button
+              className="btn iconBtn"
+              type="button"
+              onClick={toggleTheme}
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            >
+              <span aria-hidden="true">{theme === 'dark' ? '☾' : '☀'}</span>
+              {theme === 'dark' ? 'Dark' : 'Light'}
+            </button>
+
             <button className="btn" type="button" onClick={loadRecipes} disabled={loading}>
               {loading ? 'Refreshing…' : 'Refresh'}
             </button>
@@ -226,8 +271,8 @@ function App() {
                       width: 44,
                       height: 42,
                       borderRadius: 12,
-                      border: '1px solid rgba(15, 23, 42, 0.12)',
-                      background: 'white',
+                      border: '1px solid var(--borderStrong)',
+                      background: 'var(--surface)',
                       padding: 0,
                     }}
                   />
