@@ -1,0 +1,4 @@
+{
+    "command": "npm run test",
+    "working_directory": "/home/kavia/workspace/code-generation/colorful-recipe-manager-203706-203715/recipe_frontend"
+}
